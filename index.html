@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোন কোষ যে কোন ধরনের কোষে পরিণত হতে পারে?",
+          options: {
+            a: "নিডোব্লাস্ট কোষ",
+            b: "আবরণী কোষ",
+            c: "সংবেদী কোষ",
+            d: "ইন্টারস্টিশিয়াল কোষ",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইন্টারস্টিশিয়াল কোষগুলো হলো হাইড্রার টটিপটেন্ট কোষ, অর্থাৎ এরা দেহের যেকোনো ধরনের কোষে রূপান্তরিত হতে পারে।</p><ul><li>এই কোষগুলো হাইড্রার পুনরুৎপাদন ক্ষমতা এবং ক্ষতিগ্রস্ত অংশ মেরামতে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li><li>নতুন কোষ গঠন এবং বৃদ্ধিও এই কোষগুলোর উপর নির্ভরশীল।</li></ul>",
+        },
+        {
+          id: 2,
+          question:
+            "নেমাটোসিস্টের (Nematocyst) ভিতরে বিষাক্ত তরল পদার্থের নাম কী?",
+          options: {
+            a: "Hypnotoxin",
+            b: "Toxin",
+            c: "Hemocyanin",
+            d: "Hemozoin",
+          },
+          correct: "a",
+          explanation:
+            "<p>নেমাটোসিস্টের ভিতরে থাকা বিষাক্ত তরল পদার্থের নাম হাইপনোটক্সিন।</p><ul><li>এটি একটি প্রোটিন এবং ফেনলের মিশ্রণ, যা শিকারকে অবশ করতে বা শিকারির হাত থেকে আত্মরক্ষা করতে ব্যবহৃত হয়।</li><li>এই বিষ শিকারের স্নায়ুতন্ত্রে প্রভাব ফেলে।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "হাইড্রার কোন অংশে নিডোসাইট কোষ সবচেয়ে বেশি থাকে?",
+          options: {
+            a: "দেহ প্রাচীর",
+            b: "কর্ষিকা",
+            c: "দেহ কাণ্ড",
+            d: "পাদ-চাকতি",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রার কর্ষিকায় নিডোসাইট কোষের সংখ্যা সবচেয়ে বেশি থাকে।</p><ul><li>কর্ষিকাগুলো শিকার ধরা এবং আত্মরক্ষার জন্য ব্যবহৃত হয়।</li><li>এবং এই কোষগুলোর মধ্যে থাকা নেমাটোসিস্ট শিকারকে অবশ করতে বা আটকে রাখতে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 4,
+          question:
+            "নিচের কোন কোষটি হাইড্রার এপিডার্মিস (Epidermis) এর অংশ নয়?",
+          options: {
+            a: "ইন্টারস্টিশিয়াল কোষ",
+            b: "ক্ষণপদীয় কোষ",
+            c: "সংবেদী কোষ",
+            d: "স্নায়ু কোষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>ক্ষণপদীয় কোষ হাইড্রার গ্যাস্ট্রোডার্মিসের অংশ, এপিডার্মিসের নয়।</p><ul><li>ক্ষণপদীয় কোষগুলো অ্যামিবয়েড চলন প্রদর্শন করে এবং খাদ্য কণা গ্রহণ ও পরিপাকে সহায়তা করে।</li><li>এপিডার্মিসে পেশি-আবরণী কোষ, ইন্টারস্টিশিয়াল কোষ, সংবেদী কোষ এবং স্নায়ু কোষ দেখা যায়।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "হাইড্রার বহিঃত্বকে সমগ্র অংশ জুড়ে অবস্থান করে কোনটি?",
+          options: {
+            a: "সংবেদী কোষ",
+            b: "নিডোব্লাস্ট কোষ",
+            c: "স্নায়ু কোষ",
+            d: "পেশি-আবরণী কোষ",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রার বহিঃত্বকে (এপিডার্মিস) সমগ্র অংশ জুড়ে পেশি-আবরণী কোষ অবস্থান করে।</p><ul><li>এই কোষগুলো দেহের আবরণ তৈরি করে।</li><li>এবং এদের গোড়ায় থাকা পেশিতন্তুগুলো দেহের সংকোচন ও প্রসারণে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "হাইড্রার এন্ডোডার্মিসের যে কোন কোষ তৈরি করতে পারে কোনটি?",
+          options: {
+            a: "পুষ্টি কোষ",
+            b: "ইন্টারস্টিশিয়াল কোষ",
+            c: "গ্রন্থি কোষ",
+            d: "সংবেদী কোষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রার ইন্টারস্টিশিয়াল কোষগুলো টটিপটেন্ট ক্ষমতা সম্পন্ন, যার অর্থ হলো এরা দেহের যেকোনো ধরনের কোষে রূপান্তরিত হতে পারে।</p><ul><li>এন্ডোডার্মিসের যেকোনো কোষ তৈরি করতে এই কোষগুলো সক্ষম।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "হাইড্রার দেহের ক্ষুদ্রতম নেমাটোসিস্ট কোনটি?",
+          options: {
+            a: "স্টেরিওলিন গ্লুটিন্যান্ট",
+            b: "স্ট্রেপটোলিন গ্লুটিন্যান্ট",
+            c: "ভলভেন্ট",
+            d: "স্টিনোটিল",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রার দেহের ক্ষুদ্রতম নেমাটোসিস্ট হলো স্টেরিওলিন গ্লুটিন্যান্ট।</p><ul><li>এই নেমাটোসিস্টগুলো আঠালো পদার্থ নিঃসরণ করে যা শিকারকে আঁকড়ে ধরতে বা চলনে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "হাইড্রার ক্ষেত্রে কোন প্রতিসাম্য পরিলক্ষিত হয়?",
+          options: {
+            a: "গোলীয় প্রতিসাম্য",
+            b: "অপ্রতিসাম্য",
+            c: "অরীয় প্রতিসাম্য",
+            d: "দ্বি-অরীয় প্রতিসাম্য",
+          },
+          correct: "c",
+          explanation:
+            "<p>হাইড্রার ক্ষেত্রে অরীয় প্রতিসাম্য পরিলক্ষিত হয়।</p><ul><li>এর দেহের কেন্দ্রীয় অক্ষ বরাবর যেকোনো তল দিয়ে ছেদ করলে দুটি সমান ও সদৃশ অংশে ভাগ করা যায়।</li><li>এটি নিডারিয়া পর্বের প্রাণীদের একটি সাধারণ বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "জননাঙ্গ সৃষ্টি হয়-",
+          options: {
+            a: "গ্রীষ্ম ও বর্ষা",
+            b: "হেমন্ত ও শীত",
+            c: "গ্রীষ্ম ও শীত",
+            d: "শীত ও বসন্ত",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রার জননাঙ্গ সাধারণত হেমন্ত ও শীতকালে সৃষ্টি হয়।</p><ul><li>এই সময়ে তাপমাত্রা কমে যায় এবং পরিবেশগত পরিবর্তন তাদের যৌন প্রজননের জন্য অনুকূল হয়।</li></ul>",
+        },
+        {
+          id: 10,
+          question:
+            "মুখছিদ্রের চারদিকে ও পাদ-চাকতিতে কোন ধরনের কোষের আধিক্য থাকে?",
+          options: {
+            a: "পেশি-আবরণী কোষ",
+            b: "স্নায়ু কোষ",
+            c: "নিডোব্লাস্ট কোষ",
+            d: "গ্রন্থি কোষ",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রার মুখছিদ্রের চারদিকে ও পাদ-চাকতিতে গ্রন্থি কোষের আধিক্য থাকে।</p><ul><li>মুখছিদ্রের গ্রন্থি কোষগুলো শ্লেষ্মা নিঃসরণ করে যা খাদ্য গলাধঃকরণে সাহায্য করে।</li><li>আর পাদ-চাকতির গ্রন্থি কোষগুলো আঠালো পদার্থ নিঃসরণ করে যা হাইড্রাকে কোনো বস্তুর সাথে আটকে থাকতে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "Hydra-তে নেমাটোসিস্ট ব্যাটারি কোথায় থাকে?",
+          options: {
+            a: "কর্ষিকার বহিঃপ্রাচীরে",
+            b: "কর্ষিকার অন্তঃপ্রাচীরে",
+            c: "কর্ষিকার নিচে",
+            d: "কর্ষিকার উপরে",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রার কর্ষিকার বহিঃপ্রাচীরে নেমাটোসিস্ট ব্যাটারি থাকে।</p><ul><li>এই ব্যাটারিগুলো হলো কয়েকটি নেমাটোসিস্ট কোষের গুচ্ছ, যা শিকারকে কার্যকরভাবে অবশ করতে বা আটকে রাখতে ব্যবহৃত হয়।</li><li>একটি বড় নেমাটোসিস্টের চারপাশে ছোট ছোট নেমাটোসিস্ট দ্বারা বেষ্টিত থাকে।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "Hydra-র দেহের কোন কোষ বুদবুদ তৈরিতে অংশগ্রহণ করে?",
+          options: {
+            a: "নিডোব্লাস্ট কোষ",
+            b: "পেশি আবরণী কোষ",
+            c: "গ্রন্থি কোষ",
+            d: "ইন্টারস্টিশিয়াল কোষ",
+          },
+          correct: "c",
+          explanation:
+            "<p>হাইড্রার গ্রন্থি কোষগুলো দেহের পাদ-চাকতিতে (basal disc) অবস্থান করে এবং বুদবুদ তৈরিতে অংশগ্রহণ করে।</p><ul><li>এই বুদবুদগুলো হাইড্রাকে জল পৃষ্ঠে ভেসে থাকতে বা এক স্থান থেকে অন্য স্থানে স্থানান্তরে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "নিচের কোনটি Hydra-র গ্যাস্ট্রোডার্মিসের কোষ নয়?",
+          options: {
+            a: "গ্রন্থি কোষ",
+            b: "স্নায়ু কোষ",
+            c: "নিডোব্লাস্ট কোষ",
+            d: "সংবেদী কোষ",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিডোব্লাস্ট কোষ হাইড্রার এপিডার্মিসের কোষ, গ্যাস্ট্রোডার্মিসের নয়।</p><ul><li>গ্যাস্ট্রোডার্মিসে পুষ্টি কোষ, গ্রন্থি কোষ, ইন্টারস্টিশিয়াল কোষ, সংবেদী কোষ এবং স্নায়ু কোষ থাকে।</li></ul>",
+        },
+        {
+          id: 14,
+          question: "Hydra-র কোন ধরনের কোষ টটিপটেন্ট ক্ষমতা সম্পন্ন?",
+          options: {
+            a: "Interstitial cell",
+            b: "Gland cell",
+            c: "Sensory cell",
+            d: "Cnidoblast cell",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রার Interstitial cell বা ইন্টারস্টিশিয়াল কোষগুলো টটিপটেন্ট ক্ষমতা সম্পন্ন।</p><ul><li>এর মানে হলো এই কোষগুলো বিভাজিত হয়ে হাইড্রার দেহের যেকোনো ধরনের কোষে (যেমন পেশি-আবরণী কোষ, নিডোসাইট, গ্রন্থি কোষ, জনন কোষ) রূপান্তরিত হতে পারে।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "Hydra-র দেহের প্রতিরক্ষাকারী আবরণ গঠন করে কোন কোষ?",
+          options: {
+            a: "নিডোব্লাস্ট কোষ",
+            b: "গ্রন্থি কোষ",
+            c: "পেশি আবরণী কোষ",
+            d: "ইন্টারস্টিশিয়াল কোষ",
+          },
+          correct: "c",
+          explanation:
+            "<p>হাইড্রার দেহের প্রতিরক্ষাকারী আবরণ পেশি আবরণী কোষ দ্বারা গঠিত হয়।</p><ul><li>এই কোষগুলো এপিডার্মিসের বেশিরভাগ অংশ জুড়ে থাকে এবং এদের ভিত্তিপ্রান্ত থেকে প্রসারিত পেশিতন্তুগুলো দেহের সংকোচন ও প্রসারণে সহায়তা করে, যা দেহের প্রতিরক্ষা ও চলনে গুরুত্বপূর্ণ।</li></ul>",
+        },
+        {
+          id: 16,
+          question: "Hydra-র কোন নেমাটোসিস্টে ফেনল থাকে?",
+          options: {
+            a: "ভলভেন্ট",
+            b: "স্ট্রেপটোলিন গ্লুটিন্যান্ট",
+            c: "পেনিট্র্যান্ট",
+            d: "স্টেরিওলিন গ্লুটিন্যান্ট",
+          },
+          correct: "c",
+          explanation:
+            "<p>হাইড্রার পেনিট্র্যান্ট নামক নেমাটোসিস্টে ফেনল থাকে।</p><ul><li>পেনিট্র্যান্ট হলো সবচেয়ে বড় এবং জটিল নেমাটোসিস্ট, যা বিষাক্ত হাইপনোটক্সিন (ফেনল ও প্রোটিনের মিশ্রণ) ধারণ করে।</li><li>এবং শিকারকে অবশ করতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "হাইড্রার কোন কোষে মায়োনিম তন্তু পাওয়া যায়?",
+          options: {
+            a: "গ্রন্থি কোষ",
+            b: "পেশি কোষ",
+            c: "নিডোব্লাস্ট কোষ",
+            d: "সংবেদী কোষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রার পেশি কোষ বা পেশি-আবরণী কোষে মায়োনিম তন্তু পাওয়া যায়।</p><ul><li>এই মায়োনিম তন্তুগুলো সংকোচনশীল প্রোটিন দিয়ে গঠিত।</li><li>এবং এদের সংকোচনের ফলেই হাইড্রার দেহের আকার পরিবর্তন হয় এবং চলন সম্ভব হয়।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "Hydra-র পুনরুৎপত্তির ক্ষমতা আবিষ্কার করেন কোন বিজ্ঞানী?",
+          options: {
+            a: "ক্যারোলাস লিনিয়াস",
+            b: "আব্রাহাম ট্রেম্বলে",
+            c: "ল্যামার্ক",
+            d: "ভার্নার",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রার পুনরুৎপত্তি বা রিজেনারেশন ক্ষমতা বিজ্ঞানী আব্রাহাম ট্রেম্বলে ১৭৪০-এর দশকে আবিষ্কার করেন।</p><ul><li>তিনি পরীক্ষা করে দেখান যে, হাইড্রাকে ছোট ছোট খণ্ডে বিভক্ত করলেও প্রতিটি খণ্ড থেকে একটি নতুন হাইড্রা তৈরি হতে পারে, যা এর অসাধারণ পুনরুৎপাদন ক্ষমতা প্রমাণ করে।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "কোন কোষের কারণে Hydra কে অমর প্রাণী বলা হয়?",
+          options: {
+            a: "নিডোসাইট",
+            b: "পেশি আবরণী",
+            c: "জনন কোষ",
+            d: "ইন্টারস্টিশিয়াল",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইন্টারস্টিশিয়াল কোষের কারণে হাইড্রাকে এক অর্থে অমর প্রাণী বলা হয়।</p><ul><li>এই টটিপটেন্ট কোষগুলো ক্রমাগত বিভাজিত হতে পারে।</li><li>এবং দেহের যেকোনো ক্ষতিগ্রস্ত বা পুরাতন কোষকে প্রতিস্থাপন করতে পারে, যার ফলে হাইড্রা তাত্ত্বিকভাবে অনির্দিষ্টকাল বেঁচে থাকতে পারে।</li></ul>",
+        },
+        {
+          id: 20,
+          question: "হাইড্রা কোন পর্বের প্রাণী?",
+          options: {
+            a: "Porifera",
+            b: "Cnidaria",
+            c: "Nematoda",
+            d: "Annelida",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রা কনিডারিয়া পর্বের প্রাণী।</p><ul><li>এই পর্বের প্রাণীদের দেহে নিডোসাইট নামক দংশক কোষ থাকে এবং এরা দ্বিস্তরী।</li><li>হাইড্রা সাধারণত স্বাদু জলে বাস করে এবং শিকার ধরার জন্য কর্ষিকা ব্যবহার করে।</li></ul>",
+        },
+        {
+          id: 21,
+          question: "কোনটি সবুজ বর্ণের হাইড্রা?",
+          options: {
+            a: "Pelmatohydra oligactis",
+            b: "Chlorohydra viridissima",
+            c: "Hydra vulgaris",
+            d: "Hydra gangetica",
+          },
+          correct: "b",
+          explanation:
+            "<p>Chlorohydra viridissima হলো সবুজ বর্ণের হাইড্রা।</p><ul><li>এর সবুজ রঙের কারণ হলো এর এন্ডোডার্মিস কোষে জুওক্লোরেলা (Chlorella) নামক এককোষী শৈবালের মিথোজীবী সহাবস্থান।</li><li>এই শৈবাল সালোকসংশ্লেষণের মাধ্যমে হাইড্রাকে খাদ্য উৎপাদনে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 22,
+          question: "Hydra - আবিষ্কার করেন কোন বিজ্ঞানী?",
+          options: {
+            a: "ক্যারোলাস লিনিয়াস",
+            b: "আব্রাহাম ট্রেম্বলে",
+            c: "ল্যামার্ক",
+            d: "ভার্নার",
+          },
+          correct: "b",
+          explanation:
+            "<p>আব্রাহাম ট্রেম্বলে প্রথম ১৭৪১ সালে হাইড্রা আবিষ্কার করেন এবং এর পুনরুৎপত্তি ক্ষমতা নিয়ে বিস্তারিত গবেষণা করেন।</p><ul><li>তার গবেষণাই এই ক্ষুদ্র প্রাণীর জীববিজ্ঞান সম্পর্কে আমাদের প্রাথমিক ধারণা দেয়।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "নিচের কোনটি দ্বিস্তরী?",
+          options: {
+            a: "Hydra",
+            b: "Taenia",
+            c: "Fasciola",
+            d: "Hiruda",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রা একটি দ্বিস্তরী প্রাণী, অর্থাৎ এদের ভ্রূণীয় দশায় দুটি জননস্তর থাকে: একটোডার্ম ও এন্ডোডার্ম।</p><ul><li>এই দুটি স্তর থেকেই এদের পূর্ণাঙ্গ দেহ গঠিত হয়।</li><li>Taenia ও Fasciola প্লাটিহেলমিন্থেস পর্বের ত্রিস্তরী এবং Hiruda অ্যানিলিডা পর্বের ত্রিস্তরী প্রাণী।</li></ul>",
+        },
+        {
+          id: 24,
+          question: "ভলভেন্টের বৈশিষ্ট্য কোনটি?",
+          options: {
+            a: "কোনো শ্যাফট থাকে না",
+            b: "বার্ব ও বার্বিউল উপস্থিত",
+            c: "সূত্রকে ক্ষুদ্র ক্ষুদ্র কাটা বিদ্যমান",
+            d: "সূত্রকের অগ্রভাগ বন্ধ",
+          },
+          correct: "d",
+          explanation:
+            "<p>ভলভেন্ট নেমাটোসিস্টের সূত্রকের অগ্রভাগ বন্ধ থাকে।</p><ul><li>এই সূত্রকটি শিকারকে পেঁচিয়ে ধরতে বা আটকে রাখতে ব্যবহৃত হয়।</li><li>এর সূত্রকে কোনো কাঁটা বা বার্ব থাকে না এবং এটি শিকারের শরীরে প্রবেশ করে না।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "একবার ব্যবহৃত নেমাটোসিস্টের পরিণতি কী হয়?",
+          options: {
+            a: "দেহে পরিপাক হয়",
+            b: "দেহের বাইরে নিষ্ক্রান্ত হয়",
+            c: "পুনরায় কর্মক্ষম হয়",
+            d: "অন্য কোষে পরিবর্তিত হয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>একবার ব্যবহৃত নেমাটোসিস্ট পুনরায় কর্মক্ষম হয় না।</p><ul><li>বরং, ব্যবহৃত নেমাটোসিস্টগুলো দেহ দ্বারা পরিপাক হয়ে যায় এবং নতুন নেমাটোসিস্ট কোষগুলো ইন্টারস্টিশিয়াল কোষ থেকে তৈরি হয়ে এদের স্থান দখল করে।</li></ul>",
+        },
+        {
+          id: 26,
+          question: "কোন ধরনের নেমাটোসিস্টের সূত্রক চাবুকের ন্যায় কাঁটাযুক্ত?",
+          options: {
+            a: "পেনিট্র্যান্ট",
+            b: "ভলভেন্ট",
+            c: "স্ট্রেপটোলিন গ্লুটিন্যান্ট",
+            d: "স্টেরিওলিন গ্লুটিন্যান্ট",
+          },
+          correct: "c",
+          explanation:
+            "<p>স্ট্রেপটোলিন গ্লুটিন্যান্ট নেমাটোসিস্টের সূত্রক চাবুকের ন্যায় কাঁটাযুক্ত হয়।</p><ul><li>এই কাঁটাগুলো শিকারকে আটকে ধরতে এবং শিকারের পৃষ্ঠের সাথে দৃঢ়ভাবে লেগে থাকতে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 27,
+          question: "Hydra-র কিউটিকল সৃষ্টি হয় কোন কোষের নিঃসৃত রসে?",
+          options: {
+            a: "পেশি আবরণী কোষ",
+            b: "অ্যামিবয়েড কোষ",
+            c: "গ্রন্থি কোষ",
+            d: "ইন্টারস্টিশিয়াল কোষ",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রার কিউটিকল পেশি আবরণী কোষের নিঃসৃত রসে সৃষ্টি হয়।</p><ul><li>এই কোষগুলো এপিডার্মিসের বেশিরভাগ অংশ জুড়ে থাকে।</li><li>এবং এদের নিঃসৃত পদার্থ একটি পাতলা, প্রতিরক্ষামূলক বহিঃআবরণ তৈরি করে, যা হাইড্রাকে সুরক্ষা দেয়।</li></ul>",
+        },
+        {
+          id: 28,
+          question: "কোনটি হাইড্রার দেহে দেখা যায়?",
+          options: {
+            a: "মেসোগ্লিয়া",
+            b: "হিমোসিল",
+            c: "স্ক্লেরাইট",
+            d: "মায়োফাইব্রিল",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রার দেহে মেসোগ্লিয়া দেখা যায়।</p><ul><li>মেসোগ্লিয়া হলো এপিডার্মিস এবং গ্যাস্ট্রোডার্মিসের মাঝখানে অবস্থিত একটি অকোষীয়, জেলির মতো স্তর।</li><li>এটি দেহকে সমর্থন দেয় এবং হাইড্রার নড়াচড়ায় ভূমিকা রাখে। হিমোসিল আর্থ্রোপোডাতে, স্ক্লেরাইট পোরিফেরাতে এবং মায়োফাইব্রিল পেশি কোষে দেখা যায়।</li></ul>",
+        },
+        {
+          id: 29,
+          question: "নিডোসাইট কোষ কোথায় পাওয়া যায়?",
+          options: {
+            a: "Hydra",
+            b: "Tacria",
+            c: "Copsychus",
+            d: "Parthera",
+          },
+          correct: "a",
+          explanation:
+            "<p>নিডোসাইট কোষ Hydra-তে পাওয়া যায়।</p><ul><li>নিডোসাইট হলো নিডারিয়া পর্বের প্রাণীদের একটি বিশেষ দংশক কোষ, যার মধ্যে নেমাটোসিস্ট নামক দংশনকারী অঙ্গাণু থাকে।</li><li>এটি শিকার ধরা এবং আত্মরক্ষার কাজে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 30,
+          question: "কোন নেমাটোসিস্টে হিপনোটক্সিন থাকে?",
+          options: {
+            a: "পেনিট্র্যান্ট",
+            b: "ভলভেন্ট",
+            c: "স্টেরিওলিন গ্লুটিন্যান্ট",
+            d: "স্ট্রেপটোলিন গ্লুটিন্যান্ট",
+          },
+          correct: "a",
+          explanation:
+            "<p>পেনিট্র্যান্ট নামক নেমাটোসিস্টে হিপনোটক্সিন থাকে।</p><ul><li>এটি সবচেয়ে বড় এবং বিষাক্ত নেমাটোসিস্ট যা শিকারের শরীরে প্রবেশ করে এবং তাকে অবশ করে দেয়।</li><li>হিপনোটক্সিন হলো একটি প্রোটিন এবং ফেনলের মিশ্রণ।</li></ul>",
+        },
+        {
+          id: 31,
+          question: "বার্ব এবং বার্বিউল যুক্ত নেমাটোসিস্ট কোনটি?",
+          options: {
+            a: "পেনিট্র্যান্ট",
+            b: "ভলভেন্ট",
+            c: "স্ট্রেপটোলিন গ্লুটিন্যান্ট",
+            d: "স্টেরিওলিন গ্লুটিন্যান্ট",
+          },
+          correct: "a",
+          explanation:
+            "<p>পেনিট্র্যান্ট নেমাটোসিস্টে বার্ব (কাঁটা) এবং বার্বিউল (ক্ষুদ্র কাঁটা) যুক্ত থাকে।</p><ul><li>এই কাঁটাগুলো শিকারের শরীরে প্রবেশ করে।</li><li>এবং নেমাটোসিস্টকে আটকে রাখতে সাহায্য করে, যাতে বিষ ভালোভাবে প্রবেশ করতে পারে।</li></ul>",
+        },
+        {
+          id: 32,
+          question: "হাইড্রায় মুকুল তৈরি করে কোন কোষটি?",
+          options: {
+            a: "পুষ্টি কোষ",
+            b: "নিডোসাইট",
+            c: "জনন কোষ",
+            d: "ইন্টারস্টিশিয়াল কোষ",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রায় অযৌন প্রজননের মাধ্যমে মুকুল তৈরি হয় এবং এই মুকুল তৈরির প্রক্রিয়ায় ইন্টারস্টিশিয়াল কোষগুলো গুরুত্বপূর্ণ ভূমিকা পালন করে।</p><ul><li>এই কোষগুলো বিভাজিত হয়ে মুকুলের নতুন কোষ গঠন করে, যা পরবর্তীতে একটি নতুন হাইড্রাতে বিকশিত হয়।</li></ul>",
+        },
+        {
+          id: 33,
+          question:
+            "হাইড্রার কর্ষিকা ও নেমাটোসিস্ট পারস্পরিক সহযোগিতায় যে কাজটিতে অংশগ্রহণ করে-",
+          options: {
+            a: "চলন",
+            b: "খাদ্য সংগ্রহ",
+            c: "আত্মরক্ষা",
+            d: "সবগুলোই",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রার কর্ষিকা এবং নেমাটোসিস্ট পারস্পরিক সহযোগিতায় চলন, খাদ্য সংগ্রহ এবং আত্মরক্ষা - এই তিনটি গুরুত্বপূর্ণ কাজে অংশগ্রহণ করে।</p><ul><li>কর্ষিকা শিকার ধরতে ও চলনে সাহায্য করে।</li><li>আর নেমাটোসিস্ট শিকারকে অবশ করতে বা শিকারির হাত থেকে রক্ষা করতে ব্যবহৃত হয়। এই সম্মিলিত কার্যকারিতা হাইড্রার জীবনযাত্রার জন্য অপরিহার্য।</li></ul>",
+        },
+        {
+          id: 34,
+          question:
+            "সিলেন্টেরাটা জাতীয় প্রাণিদের দেহে নানান ধরনের নেমাটোসিস্ট শনাক্ত করা হয়েছে। হাইড্রাতে যেটি পাওয়া যায় না সেটি হচ্ছে-",
+          options: {
+            a: "স্ট্রেপটোলিন গ্লুটিন্যান্ট",
+            b: "স্টেরিওলিন গ্লুটিন্যান্ট",
+            c: "ভলভেন্ট",
+            d: "স্টেরিওগ্যাস্টুলা",
+          },
+          correct: "d",
+          explanation:
+            "<p>স্টেরিওগ্যাস্টুলা হলো এক ধরনের লার্ভা দশা, এটি কোনো নেমাটোসিস্ট নয়।</p><ul><li>হাইড্রাতে চার ধরনের নেমাটোসিস্ট পাওয়া যায়: পেনিট্র্যান্ট, ভলভেন্ট, স্ট্রেপটোলিন গ্লুটিন্যান্ট এবং স্টেরিওলিন গ্লুটিন্যান্ট।</li></ul>",
+        },
+        {
+          id: 35,
+          question: "Hydra-র গ্যাস্ট্রোডার্মিসের কোষ কোনটি?",
+          options: {
+            a: "নিডোসাইট",
+            b: "জনন কোষ",
+            c: "পুষ্টি কোষ",
+            d: "প্যারাইটাল কোষ",
+          },
+          correct: "c",
+          explanation:
+            "<p>হাইড্রার গ্যাস্ট্রোডার্মিসে পুষ্টি কোষ থাকে।</p><ul><li>এই কোষগুলো খাদ্য পরিপাক এবং পুষ্টি শোষণে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li><li>গ্যাস্ট্রোডার্মিস হলো হাইড্রার দেহের ভেতরের স্তর।</li></ul>",
+        },
+        {
+          id: 36,
+          question: "Hydra-র কোন কোষটি কেবলমাত্র বহিঃস্তরে বিদ্যমান?",
+          options: {
+            a: "নিডোব্লাস্ট কোষ",
+            b: "স্নায়ু কোষ",
+            c: "গ্রন্থি কোষ",
+            d: "ক্ষণপদীয় কোষ",
+          },
+          correct: "a",
+          explanation:
+            "<p>নিডোব্লাস্ট কোষ হাইড্রার কেবলমাত্র বহিঃস্তরে বা এপিডার্মিসে বিদ্যমান থাকে।</p><ul><li>এই কোষগুলোতে নেমাটোসিস্ট নামক দংশক অঙ্গাণু থাকে, যা আত্মরক্ষা ও শিকার ধরার কাজে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 37,
+          question: "হিপনোটক্সিনের রাসায়নিক উপাদানগুলো কী কী?",
+          options: {
+            a: "প্রোটিন ও লিপিড",
+            b: "ফেনল ও প্রোটিন",
+            c: "ফেনল ও লিপিড",
+            d: "লিপিড ও এসিড",
+          },
+          correct: "b",
+          explanation:
+            "<p>হিপনোটক্সিন হলো একটি বিষাক্ত পদার্থ যা ফেনল এবং প্রোটিনের সমন্বয়ে গঠিত।</p><ul><li>এটি নিডোসাইট কোষে থাকে।</li><li>এবং শিকারকে অবশ করতে বা শিকারিকে প্রতিরোধ করতে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 38,
+          question: "হিপনোটক্সিন কোন কোষে থাকে?",
+          options: {
+            a: "পেশি-আবরণী",
+            b: "নিডোব্লাস্ট",
+            c: "ইন্টারস্টিশিয়াল কোষ",
+            d: "সংবেদী",
+          },
+          correct: "b",
+          explanation:
+            "<p>হিপনোটক্সিন নিডোব্লাস্ট কোষের মধ্যে থাকা নেমাটোসিস্টের ভেতরে থাকে।</p><ul><li>নিডোব্লাস্ট হলো দংশক কোষ যা হাইড্রার প্রতিরক্ষা এবং খাদ্য গ্রহণে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li></ul>",
+        },
+        {
+          id: 39,
+          question: "কোন প্রাণির দেহে টটিপটেন্ট প্রকৃতির কোষ পাওয়া যায়?",
+          options: {
+            a: "Hydra",
+            b: "Labeo",
+            c: "Pila",
+            d: "Poekilocerus",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইড্রার দেহে টটিপটেন্ট প্রকৃতির কোষ পাওয়া যায়, বিশেষ করে ইন্টারস্টিশিয়াল কোষগুলো।</p><ul><li>এই কোষগুলো যেকোনো ধরনের কোষে রূপান্তরিত হতে পারে।</li><li>এবং হাইড্রার পুনরুৎপত্তি ক্ষমতা এবং দেহের ক্ষয়পূরণে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 40,
+          question: "হাইড্রা কোন শ্রেণির অন্তর্গত?",
+          options: {
+            a: "Insecta",
+            b: "Hydrozoa",
+            c: "Anthozoa",
+            d: "Reptilia",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রা হাইড্রোzoa শ্রেণির অন্তর্গত।</p><ul><li>Hydrozoa হলো কনিডারিয়া পর্বের একটি শ্রেণি, যার সদস্যরা একক বা কলোনিয়াল উভয় প্রকার হতে পারে।</li><li>এবং এদের জীবনচক্রে পলিপ ও মেডুসা দশা উভয়ই থাকতে পারে।</li></ul>",
+        },
+        {
+          id: 41,
+          question: "নিডোব্লাস্টের কাজ নয় কোনটি?",
+          options: {
+            a: "খাদ্য গ্রহণ",
+            b: "পরিপাক",
+            c: "আত্মরক্ষা",
+            d: "চলন",
+          },
+          correct: "b",
+          explanation:
+            "<p>নিডোব্লাস্টের প্রধান কাজ খাদ্য গ্রহণ (শিকার ধরা), আত্মরক্ষা এবং কিছু ক্ষেত্রে চলনে সাহায্য করা।</p><ul><li>পরিপাক প্রক্রিয়া হাইড্রার গ্যাস্ট্রোডার্মিসের পুষ্টি কোষ দ্বারা সম্পন্ন হয়, যা নিডোব্লাস্টের কাজ নয়।</li></ul>",
+        },
+        {
+          id: 42,
+          question: "কোন অংশটি হাইড্রায় পাওয়া যায় না?",
+          options: {
+            a: "শিখাকোষ",
+            b: "নিডোসাইট",
+            c: "নিডোব্লাস্ট",
+            d: "গ্রন্থি কোষ",
+          },
+          correct: "a",
+          explanation:
+            "<p>শিখাকোষ প্লাটিহেলমিন্থেস পর্বের প্রাণীদের রেচন অঙ্গ, এটি হাইড্রায় পাওয়া যায় না।</p><ul><li>হাইড্রার রেচন প্রক্রিয়া ব্যাপন প্রক্রিয়ায় সম্পন্ন হয়।</li><li>নিডোসাইট, নিডোব্লাস্ট এবং গ্রন্থি কোষ হাইড্রার দেহের গুরুত্বপূর্ণ অংশ।</li></ul>",
+        },
+        {
+          id: 43,
+          question: "হাইড্রার দেহের কোন কোষকে সংরক্ষিত কোষ বলে?",
+          options: {
+            a: "পুষ্টি কোষ",
+            b: "সংবেদী",
+            c: "স্নায়ু",
+            d: "ইন্টারস্টিশিয়াল",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রার দেহের ইন্টারস্টিশিয়াল কোষগুলোকে সংরক্ষিত কোষ বলা হয়।</p><ul><li>কারণ এই কোষগুলো অবিচ্ছিন্নভাবে বিভাজিত হয়ে হাইড্রার দেহের ক্ষতিগ্রস্ত কোষগুলোকে প্রতিস্থাপন করতে পারে।</li><li>এবং নতুন কোষ ও অঙ্গ তৈরি করতে পারে, যা এদের অসাধারণ পুনরুৎপত্তি ক্ষমতা দেয়।</li></ul>",
+        },
+        {
+          id: 44,
+          question: "নিম্নের কোনটি পেনিট্র্যান্ট নেমাটোসিস্টের বৈশিষ্ট্য?",
+          options: {
+            a: "সূত্রক কাঁটাযুক্ত",
+            b: "আঠালো রস ক্ষরণ করে",
+            c: "শীর্ষদেশ বন্ধ",
+            d: "বাট প্রশস্ত",
+          },
+          correct: "d",
+          explanation:
+            "<p>পেনিট্র্যান্ট নেমাটোসিস্টের একটি প্রধান বৈশিষ্ট্য হলো এর বাট প্রশস্ত।</p><ul><li>এই বাটটি সূত্রকের গোড়ায় অবস্থিত এবং এটি শিকারের শরীরে প্রবেশ করতে সহায়তা করে।</li><li>পেনিট্র্যান্ট বিষাক্ত হাইপনোটক্সিন ধারণ করে।</li></ul>",
+        },
+        {
+          id: 45,
+          question: "হাইড্রায় কয় ধরনের নেমাটোসিস্ট পাওয়া যায়?",
+          options: {
+            a: "১ ধরনের",
+            b: "২ ধরনের",
+            c: "৩ ধরনের",
+            d: "৪ ধরনের",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রায় মোট ৪ ধরনের নেমাটোসিস্ট পাওয়া যায়।</p><ul><li>এগুলো হলো: পেনিট্র্যান্ট, ভলভেন্ট, স্টেরিওলিন গ্লুটিন্যান্ট এবং স্ট্রেপটোলিন গ্লুটিন্যান্ট।</li><li>প্রতিটি নেমাটোসিস্টের নির্দিষ্ট কাজ রয়েছে।</li></ul>",
+        },
+        {
+          id: 46,
+          question: "হাইড্রার এপিডার্মিস ও গ্যাস্ট্রোডার্মিসের মাঝখানে থাকে-",
+          options: {
+            a: "মেসোডার্ম",
+            b: "মেসোগ্লিয়া",
+            c: "সিলেন্টেরন",
+            d: "এন্ডোডার্ম",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রার এপিডার্মিস (বহিঃস্তর) ও গ্যাস্ট্রোডার্মিস (অন্তঃস্তর) এর মাঝখানে মেসোগ্লিয়া নামক একটি অকোষীয়, জেলির মতো স্তর থাকে।</p><ul><li>এটি হাইড্রার দেহকে সমর্থন দেয় এবং দুটি কোষস্তরের মধ্যে সংযোগ রক্ষা করে।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+              <label class="option" data-option="${option}">
+                <div class="circle">${option}</div>
+                <span class="option-text">${question.options[option]}</span>
+              </label>
+            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                 <div class="explanation-content">
+                   <div class="explanation-label">ব্যাখ্যা:</div>
+                   ${question.explanation}
+                 </div>
+               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+            <p class="question-label">${index + 1}. ${question.question}</p>
+            <div class="options">
+              ${optionsHTML}
+            </div>
+            ${explanationHTML}
+          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
